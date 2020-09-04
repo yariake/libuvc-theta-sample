@@ -187,7 +187,7 @@ main(int argc, char **argv)
 	if (strcmp(cmd_name, "gst_loopback") == 0)
 		pipe_proc = "decodebin ! autovideoconvert ! "
 			"video/x-raw,format=I420 ! identity drop-allocation=true !"
-			"v4l2sink device=/dev/video1 sync=false";
+			"v4l2sink device=/dev/video2 qos=false sync=false";
 	else
 		pipe_proc = " decodebin ! autovideosink sync=false";
 
@@ -243,9 +243,29 @@ main(int argc, char **argv)
 
 	gst_element_set_state(src.pipeline, GST_STATE_PLAYING);
 	pthread_create(&thr, NULL, keywait, &src);
-	
+
 	res = thetauvc_get_stream_ctrl_format_size(devh,
-			THETAUVC_MODE_UHD_2997, &ctrl);
+			THETAUVC_MODE_UHD_2997, &ctrl);	
+	
+	if (argc > 1 && strcmp("--format", argv[1]) == 0) {
+		if (argc > 2 && strcmp("4K", argv[2]) == 0) {
+			printf("THETA live video is 4K");
+			res = thetauvc_get_stream_ctrl_format_size(devh,
+				THETAUVC_MODE_UHD_2997, &ctrl);	
+		} else if (argc > 2 && strcmp("2K", argv[2]) == 0) {
+			printf("THETA live video is 2K");
+			res = thetauvc_get_stream_ctrl_format_size(devh,
+				THETAUVC_MODE_FHD_2997, &ctrl);				
+		}
+		
+		else {
+			printf("specify video device. --format 4K or --format 2K\n");
+			goto exit;
+		}
+		
+	}
+
+
 	src.dwFrameInterval = ctrl.dwFrameInterval;
 	src.dwClockFrequency = ctrl.dwClockFrequency;
 
